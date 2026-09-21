@@ -1,52 +1,92 @@
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
+
 import { StatusBar } from 'expo-status-bar';
 import { router } from 'expo-router';
 
-type LocationData = {
-  latitude: number;
-  longitude: number;
-  address: string;
-};
+import { resolveLocationInput } from '../services/locationParser';
+import type { LocationData } from '../types/location';
+import {
+  COLORS,
+  TEST_LOCATION,
+} from '../utils/constants';
+
+import { PrimaryButton } from '../components/PrimaryButton';
+import { PickupCard } from '../components/PickupCard';
 
 export default function LocationScreen() {
-  const [location, setLocation] = useState<LocationData | null>(null);
+  const [input, setInput] = useState('');
+  const [location, setLocation] =
+    useState<LocationData | null>(null);
+
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const handleResolveLocation = async () => {
+    if (!input.trim() || loading) {
+      return;
+    }
+
+    setLoading(true);
+    setErrorMessage('');
+
+    try {
+      const resolved =
+        await resolveLocationInput(
+          input,
+          'manual',
+        );
+
+      setLocation(resolved);
+    } catch (error) {
+      setLocation(null);
+
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : 'Could not find that pickup location. Please try again.',
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUseTestLocation = () => {
+    setErrorMessage('');
+
+    setLocation({
+      ...TEST_LOCATION,
+      source: 'test',
+    });
+  };
 
   const handleContinue = () => {
-    if (!location) {
+    if (!location || loading) {
       return;
     }
 
     router.push({
       pathname: '/destination',
       params: {
-        latitude: String(location.latitude),
-        longitude: String(location.longitude),
+        latitude: String(
+          location.latitude,
+        ),
+        longitude: String(
+          location.longitude,
+        ),
         address: location.address,
       },
-    });
-  };
-
-  const handleUseTestLocation = () => {
-    /*
-     * Temporary development location.
-     *
-     * This is only here so we can test the complete UI flow
-     * before implementing Android/WhatsApp location sharing.
-     *
-     * We will remove this test location once the real
-     * location-sharing flow is connected.
-     */
-    setLocation({
-      latitude: 17.385044,
-      longitude: 78.486671,
-      address: 'Hyderabad, Telangana',
     });
   };
 
@@ -54,111 +94,253 @@ export default function LocationScreen() {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="light" />
 
-      <View style={styles.container}>
-        <View style={styles.topBar}>
-          <Pressable
-            onPress={() => router.back()}
-            style={({ pressed }) => [
-              styles.backButton,
-              pressed && styles.pressed,
-            ]}
-          >
-            <Text style={styles.backArrow}>‹</Text>
-          </Pressable>
+      <KeyboardAvoidingView
+        style={styles.keyboardContainer}
+        behavior={
+          Platform.OS === 'ios'
+            ? 'padding'
+            : undefined
+        }
+      >
+        <View style={styles.container}>
+          <View style={styles.topBar}>
+            <Pressable
+              onPress={() => router.back()}
+              disabled={loading}
+              style={({ pressed }) => [
+                styles.backButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={styles.backArrow}>
+                ‹
+              </Text>
+            </Pressable>
 
-          <Text style={styles.screenTitle}>Pickup Location</Text>
+            <Text style={styles.screenTitle}>
+              Pickup Location
+            </Text>
 
-          <View style={styles.topBarSpacer} />
-        </View>
-
-        <View style={styles.content}>
-          <View style={styles.locationIconContainer}>
-            <Text style={styles.locationIcon}>📍</Text>
+            <View
+              style={styles.topBarSpacer}
+            />
           </View>
 
-          <Text style={styles.title}>
-            Where should the driver{'\n'}pick them up?
-          </Text>
-
-          <Text style={styles.description}>
-            Share a location from WhatsApp with RideLink and we'll use it as
-            the pickup point.
-          </Text>
-
-          {location ? (
-            <View style={styles.locationCard}>
-              <View style={styles.cardIcon}>
-                <Text style={styles.cardIconText}>✓</Text>
-              </View>
-
-              <View style={styles.locationDetails}>
-                <Text style={styles.locationLabel}>Pickup location</Text>
-
-                <Text style={styles.address} numberOfLines={2}>
-                  {location.address}
-                </Text>
-
-                <Text style={styles.coordinates}>
-                  {location.latitude.toFixed(6)},{' '}
-                  {location.longitude.toFixed(6)}
-                </Text>
-              </View>
-            </View>
-          ) : (
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyIcon}>📍</Text>
-
-              <Text style={styles.emptyTitle}>No location received</Text>
-
-              <Text style={styles.emptyDescription}>
-                Send or share the person's location to RideLink.
+          <ScrollView
+            contentContainerStyle={
+              styles.scrollContent
+            }
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View
+              style={
+                styles.locationIconContainer
+              }
+            >
+              <Text
+                style={styles.locationIcon}
+              >
+                📍
               </Text>
             </View>
-          )}
 
-          <Pressable
-            onPress={handleUseTestLocation}
-            style={({ pressed }) => [
-              styles.testButton,
-              pressed && styles.pressed,
-            ]}
-          >
-            <Text style={styles.testButtonText}>
-              Use Test Location
-            </Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.bottomSection}>
-          <Pressable
-            disabled={!location}
-            onPress={handleContinue}
-            style={({ pressed }) => [
-              styles.continueButton,
-              !location && styles.continueButtonDisabled,
-              pressed && location && styles.pressed,
-            ]}
-          >
-            <Text
-              style={[
-                styles.continueButtonText,
-                !location && styles.continueButtonTextDisabled,
-              ]}
-            >
-              Continue
+            <Text style={styles.title}>
+              Where should the driver
+              {'\n'}
+              pick them up?
             </Text>
 
             <Text
+              style={styles.description}
+            >
+              Enter an address, coordinates,
+              or Plus Code. Later, this same
+              screen will also accept a shared
+              WhatsApp location.
+            </Text>
+
+            <Text style={styles.label}>
+              PICKUP LOCATION
+            </Text>
+
+            <View
               style={[
-                styles.continueArrow,
-                !location && styles.continueButtonTextDisabled,
+                styles.inputContainer,
+                input.length > 0 &&
+                  styles.inputActive,
               ]}
             >
-              →
+              <TextInput
+                value={input}
+                onChangeText={(text) => {
+                  setInput(text);
+                  setErrorMessage('');
+                  setLocation(null);
+                }}
+                placeholder="Address, coordinates, or Plus Code"
+                placeholderTextColor="#69727D"
+                style={styles.input}
+                multiline
+                numberOfLines={2}
+                textAlignVertical="center"
+                autoCapitalize="words"
+                autoCorrect
+                editable={!loading}
+                onSubmitEditing={
+                  handleResolveLocation
+                }
+              />
+            </View>
+
+            <Text
+              style={styles.helperText}
+            >
+              Examples: Hyderabad, Telangana
+              {' · '}
+              17.385044, 78.486671
+              {' · '}
+              a Plus Code
             </Text>
-          </Pressable>
+
+            {errorMessage ? (
+              <View
+                style={styles.errorCard}
+              >
+                <View
+                  style={styles.errorIcon}
+                >
+                  <Text
+                    style={
+                      styles.errorIconText
+                    }
+                  >
+                    !
+                  </Text>
+                </View>
+
+                <Text
+                  style={styles.errorText}
+                >
+                  {errorMessage}
+                </Text>
+              </View>
+            ) : null}
+
+            <Pressable
+              disabled={
+                !input.trim() || loading
+              }
+              onPress={
+                handleResolveLocation
+              }
+              style={({ pressed }) => [
+                styles.resolveButton,
+                (!input.trim() ||
+                  loading) &&
+                  styles.resolveButtonDisabled,
+                pressed &&
+                  input.trim() &&
+                  !loading &&
+                  styles.pressed,
+              ]}
+            >
+              {loading ? (
+                <>
+                  <ActivityIndicator
+                    size="small"
+                    color={
+                      COLORS.accentDark
+                    }
+                  />
+
+                  <Text
+                    style={
+                      styles.resolveText
+                    }
+                  >
+                    Finding pickup...
+                  </Text>
+                </>
+              ) : (
+                <Text
+                  style={[
+                    styles.resolveText,
+                    !input.trim() &&
+                      styles.resolveTextDisabled,
+                  ]}
+                >
+                  Use This Pickup Location
+                </Text>
+              )}
+            </Pressable>
+
+            {location ? (
+              <PickupCard
+                location={location}
+                title="Pickup location"
+              />
+            ) : (
+              <View
+                style={styles.emptyCard}
+              >
+                <Text
+                  style={styles.emptyIcon}
+                >
+                  📍
+                </Text>
+
+                <Text
+                  style={styles.emptyTitle}
+                >
+                  No pickup location yet
+                </Text>
+
+                <Text
+                  style={
+                    styles.emptyDescription
+                  }
+                >
+                  Resolve a location above, or
+                  use the test location while we
+                  build the WhatsApp sharing
+                  flow.
+                </Text>
+              </View>
+            )}
+
+            <Pressable
+              onPress={
+                handleUseTestLocation
+              }
+              style={({ pressed }) => [
+                styles.testButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text
+                style={
+                  styles.testButtonText
+                }
+              >
+                Use Test Location
+              </Text>
+            </Pressable>
+          </ScrollView>
+
+          <View
+            style={styles.bottomSection}
+          >
+            <PrimaryButton
+              label="Continue"
+              onPress={handleContinue}
+              disabled={
+                !location || loading
+              }
+            />
+          </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -166,7 +348,11 @@ export default function LocationScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#0B0D10',
+    backgroundColor: COLORS.background,
+  },
+
+  keyboardContainer: {
+    flex: 1,
   },
 
   container: {
@@ -187,9 +373,9 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: '#15191E',
+    backgroundColor: COLORS.surfaceAlt,
     borderWidth: 1,
-    borderColor: '#282E36',
+    borderColor: COLORS.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -198,34 +384,35 @@ const styles = StyleSheet.create({
     marginTop: -4,
     fontSize: 32,
     lineHeight: 36,
-    color: '#FFFFFF',
+    color: COLORS.text,
   },
 
   screenTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: COLORS.text,
   },
 
   topBarSpacer: {
     width: 42,
   },
 
-  content: {
-    flex: 1,
-    justifyContent: 'center',
+  scrollContent: {
+    paddingTop: 24,
+    paddingBottom: 20,
   },
 
   locationIconContainer: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#17251F',
+    backgroundColor:
+      COLORS.accentSurface,
     borderWidth: 1,
-    borderColor: '#315A4C',
+    borderColor:
+      COLORS.accentBorder,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
   },
 
   locationIcon: {
@@ -233,10 +420,11 @@ const styles = StyleSheet.create({
   },
 
   title: {
+    marginTop: 22,
     fontSize: 34,
     lineHeight: 41,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: COLORS.text,
     letterSpacing: -0.8,
   },
 
@@ -244,17 +432,79 @@ const styles = StyleSheet.create({
     marginTop: 14,
     fontSize: 15,
     lineHeight: 23,
-    color: '#929AA5',
-    maxWidth: 440,
+    color: COLORS.textMuted,
+  },
+
+  label: {
+    marginTop: 28,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.4,
+    color: '#68727D',
+  },
+
+  inputContainer: {
+    marginTop: 10,
+    minHeight: 62,
+    borderRadius: 16,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.borderSoft,
+    paddingHorizontal: 16,
+    justifyContent: 'center',
+  },
+
+  inputActive: {
+    borderColor: COLORS.accentBorder,
+  },
+
+  input: {
+    minHeight: 58,
+    fontSize: 16,
+    lineHeight: 22,
+    color: COLORS.text,
+    paddingVertical: 10,
+  },
+
+  helperText: {
+    marginTop: 8,
+    fontSize: 11,
+    lineHeight: 17,
+    color: '#66707B',
+  },
+
+  resolveButton: {
+    marginTop: 14,
+    minHeight: 50,
+    borderRadius: 14,
+    backgroundColor: COLORS.accent,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+  },
+
+  resolveButtonDisabled: {
+    backgroundColor: '#20252B',
+  },
+
+  resolveText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: COLORS.accentDark,
+  },
+
+  resolveTextDisabled: {
+    color: '#555E68',
   },
 
   emptyCard: {
-    marginTop: 28,
+    marginTop: 18,
     padding: 22,
     borderRadius: 18,
-    backgroundColor: '#12161B',
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: '#282E36',
+    borderColor: COLORS.border,
     alignItems: 'center',
   },
 
@@ -266,7 +516,7 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: COLORS.text,
   },
 
   emptyDescription: {
@@ -277,69 +527,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  locationCard: {
-    marginTop: 28,
-    padding: 18,
-    borderRadius: 18,
-    backgroundColor: '#121B17',
-    borderWidth: 1,
-    borderColor: '#315A4C',
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  cardIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#1B3A30',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  cardIconText: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#6EE7B7',
-  },
-
-  locationDetails: {
-    flex: 1,
-    marginLeft: 14,
-  },
-
-  locationLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#6EE7B7',
-    textTransform: 'uppercase',
-    letterSpacing: 0.7,
-  },
-
-  address: {
-    marginTop: 5,
-    fontSize: 16,
-    lineHeight: 22,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-
-  coordinates: {
-    marginTop: 5,
-    fontSize: 11,
-    color: '#7F8995',
-    fontVariant: ['tabular-nums'],
-  },
-
   testButton: {
-    alignSelf: 'flex-start',
+    alignSelf: 'center',
     marginTop: 14,
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderRadius: 10,
-    backgroundColor: '#15191E',
+    backgroundColor: COLORS.surfaceAlt,
     borderWidth: 1,
-    borderColor: '#282E36',
+    borderColor: COLORS.border,
   },
 
   testButtonText: {
@@ -348,41 +544,46 @@ const styles = StyleSheet.create({
     color: '#AAB2BD',
   },
 
-  bottomSection: {
-    paddingTop: 16,
-  },
-
-  continueButton: {
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: '#6EE7B7',
+  errorCard: {
+    marginTop: 14,
+    padding: 13,
+    borderRadius: 14,
+    backgroundColor: COLORS.errorSurface,
+    borderWidth: 1,
+    borderColor: COLORS.errorBorder,
     flexDirection: 'row',
     alignItems: 'center',
+  },
+
+  errorIcon: {
+    width: 25,
+    height: 25,
+    borderRadius: 13,
+    backgroundColor: '#6B3036',
+    alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 10,
   },
 
-  continueButtonDisabled: {
-    backgroundColor: '#20252B',
-  },
-
-  continueButtonText: {
-    fontSize: 16,
+  errorIconText: {
+    fontSize: 14,
     fontWeight: '800',
-    color: '#07110D',
+    color: COLORS.text,
   },
 
-  continueButtonTextDisabled: {
-    color: '#626B75',
+  errorText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 18,
+    color: COLORS.errorText,
   },
 
-  continueArrow: {
-    marginLeft: 10,
-    fontSize: 21,
-    fontWeight: '700',
-    color: '#07110D',
+  bottomSection: {
+    paddingTop: 12,
   },
 
   pressed: {
     opacity: 0.75,
+    transform: [{ scale: 0.99 }],
   },
 });
