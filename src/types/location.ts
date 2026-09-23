@@ -1,4 +1,6 @@
-export type LocationSource = 'manual' | 'test' | 'shared';
+export type LocationSource =
+  | 'manual'
+  | 'shared';
 
 export type LocationData = {
   latitude: number;

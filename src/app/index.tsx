@@ -1,4 +1,5 @@
 import React from 'react';
+
 import {
   Pressable,
   SafeAreaView,
@@ -6,11 +7,12 @@ import {
   Text,
   View,
 } from 'react-native';
+
 import { StatusBar } from 'expo-status-bar';
 import { router } from 'expo-router';
 
 export default function HomeScreen() {
-  const handleReceiveLocation = () => {
+  const handleStartRide = () => {
     router.push('/location');
   };
 
@@ -24,30 +26,47 @@ export default function HomeScreen() {
             <Text style={styles.logoEmoji}>🚕</Text>
           </View>
 
-          <Text style={styles.appName}>RideLink</Text>
+          <Text style={styles.appName}>
+            RideLink
+          </Text>
         </View>
 
         <View style={styles.hero}>
           <Text style={styles.title}>
             Book a ride{'\n'}
-            <Text style={styles.titleAccent}>for someone else.</Text>
+            <Text style={styles.titleAccent}>
+              for someone else.
+            </Text>
           </Text>
 
           <Text style={styles.description}>
-            Receive their location, set the destination, and open Uber with
-            the pickup location ready to go.
+            Enter their pickup location,
+            choose the destination, and
+            continue to Uber with both
+            locations ready.
           </Text>
 
           <View style={styles.flowCard}>
             <View style={styles.flowStep}>
               <View style={styles.stepCircle}>
-                <Text style={styles.stepNumber}>1</Text>
+                <Text style={styles.stepNumber}>
+                  1
+                </Text>
               </View>
 
               <View style={styles.stepContent}>
-                <Text style={styles.stepTitle}>Receive location</Text>
-                <Text style={styles.stepDescription}>
-                  Get your friend's location from WhatsApp.
+                <Text style={styles.stepTitle}>
+                  Add pickup location
+                </Text>
+
+                <Text
+                  style={
+                    styles.stepDescription
+                  }
+                >
+                  Enter an address, map
+                  coordinates, Google Maps
+                  link, or Plus Code.
                 </Text>
               </View>
             </View>
@@ -56,13 +75,23 @@ export default function HomeScreen() {
 
             <View style={styles.flowStep}>
               <View style={styles.stepCircle}>
-                <Text style={styles.stepNumber}>2</Text>
+                <Text style={styles.stepNumber}>
+                  2
+                </Text>
               </View>
 
               <View style={styles.stepContent}>
-                <Text style={styles.stepTitle}>Set destination</Text>
-                <Text style={styles.stepDescription}>
-                  Enter where they need to go.
+                <Text style={styles.stepTitle}>
+                  Set destination
+                </Text>
+
+                <Text
+                  style={
+                    styles.stepDescription
+                  }
+                >
+                  Enter where the passenger
+                  needs to go.
                 </Text>
               </View>
             </View>
@@ -71,13 +100,23 @@ export default function HomeScreen() {
 
             <View style={styles.flowStep}>
               <View style={styles.stepCircle}>
-                <Text style={styles.stepNumber}>3</Text>
+                <Text style={styles.stepNumber}>
+                  3
+                </Text>
               </View>
 
               <View style={styles.stepContent}>
-                <Text style={styles.stepTitle}>Open Uber</Text>
-                <Text style={styles.stepDescription}>
-                  Continue with the pickup and destination.
+                <Text style={styles.stepTitle}>
+                  Continue with Uber
+                </Text>
+
+                <Text
+                  style={
+                    styles.stepDescription
+                  }
+                >
+                  Open Uber with the pickup
+                  and destination ready.
                 </Text>
               </View>
             </View>
@@ -86,18 +125,34 @@ export default function HomeScreen() {
 
         <View style={styles.bottomSection}>
           <Pressable
-            onPress={handleReceiveLocation}
+            onPress={handleStartRide}
             style={({ pressed }) => [
               styles.primaryButton,
-              pressed && styles.primaryButtonPressed,
+              pressed &&
+                styles.primaryButtonPressed,
             ]}
           >
-            <Text style={styles.primaryButtonText}>Receive Location</Text>
-            <Text style={styles.primaryButtonArrow}>→</Text>
+            <Text
+              style={
+                styles.primaryButtonText
+              }
+            >
+              Start Ride
+            </Text>
+
+            <Text
+              style={
+                styles.primaryButtonArrow
+              }
+            >
+              →
+            </Text>
           </Pressable>
 
           <Text style={styles.footerText}>
-            Your location data is used only for the ride workflow.
+            RideLink does not book the ride
+            itself. You review and confirm
+            the ride in Uber.
           </Text>
         </View>
       </View>
@@ -245,7 +300,11 @@ const styles = StyleSheet.create({
 
   primaryButtonPressed: {
     opacity: 0.75,
-    transform: [{ scale: 0.99 }],
+    transform: [
+      {
+        scale: 0.99,
+      },
+    ],
   },
 
   primaryButtonText: {

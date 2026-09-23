@@ -12,7 +12,12 @@ export type GeocodedLocation = {
 };
 
 const LOCATIONIQ_API_KEY =
-  process.env.EXPO_PUBLIC_LOCATIONIQ_API_KEY;
+  process.env.EXPO_PUBLIC_LOCATIONIQ_API_KEY?.trim();
+
+const LOCATIONIQ_BASE_URL =
+  'https://us1.locationiq.com/v1';
+
+const REQUEST_TIMEOUT_MS = 10_000;
 
 function isValidCoordinate(
   latitude: number,
@@ -28,29 +33,82 @@ function isValidCoordinate(
   );
 }
 
+async function fetchWithTimeout(
+  url: string,
+  timeoutMs = REQUEST_TIMEOUT_MS,
+): Promise<Response> {
+  const controller = new AbortController();
+
+  const timeout = setTimeout(() => {
+    controller.abort();
+  }, timeoutMs);
+
+  try {
+    return await fetch(url, {
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 function extractCoordinates(
   input: string,
 ): { latitude: number; longitude: number } | null {
-  const coordinatePattern =
-    /(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/;
+  const directMatch = input.match(
+    /(?:^|[?&/@=:\s])(-?\d{1,3}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)(?:$|[&/\s])/,
+  );
 
-  const match = input.match(coordinatePattern);
+  if (directMatch) {
+    const latitude = Number(directMatch[1]);
+    const longitude = Number(directMatch[2]);
 
-  if (!match) {
-    return null;
+    if (isValidCoordinate(latitude, longitude)) {
+      return {
+        latitude,
+        longitude,
+      };
+    }
   }
 
-  const latitude = Number(match[1]);
-  const longitude = Number(match[2]);
+  const atMatch = input.match(
+    /@(-?\d{1,3}(?:\.\d+)?),(-?\d{1,3}(?:\.\d+)?)/,
+  );
 
-  if (!isValidCoordinate(latitude, longitude)) {
-    return null;
+  if (atMatch) {
+    const latitude = Number(atMatch[1]);
+    const longitude = Number(atMatch[2]);
+
+    if (isValidCoordinate(latitude, longitude)) {
+      return {
+        latitude,
+        longitude,
+      };
+    }
   }
 
-  return { latitude, longitude };
+  const queryMatch = input.match(
+    /[?&]q=(-?\d{1,3}(?:\.\d+)?),(-?\d{1,3}(?:\.\d+)?)/,
+  );
+
+  if (queryMatch) {
+    const latitude = Number(queryMatch[1]);
+    const longitude = Number(queryMatch[2]);
+
+    if (isValidCoordinate(latitude, longitude)) {
+      return {
+        latitude,
+        longitude,
+      };
+    }
+  }
+
+  return null;
 }
 
-function extractPlusCode(input: string): string | null {
+function extractPlusCode(
+  input: string,
+): string | null {
   const match = input.match(
     /\b([23456789CFGHJMPQRVWX]{2,8}\+[23456789CFGHJMPQRVWX]{2,7})\b/i,
   );
@@ -72,29 +130,71 @@ function getTextWithoutPlusCode(
 async function locationIqSearch(
   query: string,
 ): Promise<GeocodedLocation> {
-  const url =
-    'https://us1.locationiq.com/v1/search' +
-    `?key=${encodeURIComponent(LOCATIONIQ_API_KEY!)}` +
-    `&q=${encodeURIComponent(query)}` +
-    '&format=json';
-
-  const response = await fetch(url);
-
-  if (!response.ok) {
+  if (!LOCATIONIQ_API_KEY) {
     throw new Error(
-      `LocationIQ geocoding failed (${response.status}).`,
+      'LocationIQ API key is not configured.',
     );
   }
 
+  const params = new URLSearchParams({
+    key: LOCATIONIQ_API_KEY,
+    q: query,
+    format: 'json',
+    limit: '1',
+    addressdetails: '1',
+  });
+
+  const url =
+    `${LOCATIONIQ_BASE_URL}/search.php?${params.toString()}`;
+
+  let response: Response;
+
+  try {
+    response = await fetchWithTimeout(url);
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.name === 'AbortError'
+    ) {
+      throw new Error(
+        'Location search timed out. Check your internet connection and try again.',
+      );
+    }
+
+    throw new Error(
+      'Unable to connect to the location service. Please try again.',
+    );
+  }
+
+  if (!response.ok) {
+    let message =
+      `LocationIQ geocoding failed (${response.status}).`;
+
+    try {
+      const errorData = await response.json();
+
+      if (
+        typeof errorData?.error === 'string' &&
+        errorData.error.trim()
+      ) {
+        message = errorData.error.trim();
+      }
+    } catch {
+      // Keep the default message.
+    }
+
+    throw new Error(message);
+  }
+
   const data = (await response.json()) as Array<{
-    lat: string;
-    lon: string;
-    display_name: string;
+    lat?: string;
+    lon?: string;
+    display_name?: string;
   }>;
 
   if (!Array.isArray(data) || data.length === 0) {
     throw new Error(
-      `No destination found for "${query}".`,
+      `No location found for "${query}".`,
     );
   }
 
@@ -112,7 +212,11 @@ async function locationIqSearch(
   return {
     latitude,
     longitude,
-    address: result.display_name,
+    address:
+      typeof result.display_name === 'string' &&
+      result.display_name.trim()
+        ? result.display_name.trim()
+        : query,
   };
 }
 
@@ -120,41 +224,67 @@ async function reverseGeocodeCoordinates(
   latitude: number,
   longitude: number,
 ): Promise<GeocodedLocation> {
-  const url =
-    'https://us1.locationiq.com/v1/reverse' +
-    `?key=${encodeURIComponent(LOCATIONIQ_API_KEY!)}` +
-    `&lat=${latitude}` +
-    `&lon=${longitude}` +
-    '&format=json';
+  if (!isValidCoordinate(latitude, longitude)) {
+    throw new Error(
+      'Invalid latitude or longitude.',
+    );
+  }
 
-  const response = await fetch(url);
-
-  if (!response.ok) {
+  if (!LOCATIONIQ_API_KEY) {
     return {
       latitude,
       longitude,
-      address: `${latitude}, ${longitude}`,
+      address: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
     };
   }
 
-  const data = (await response.json()) as {
-    display_name?: string;
-  };
+  const params = new URLSearchParams({
+    key: LOCATIONIQ_API_KEY,
+    lat: String(latitude),
+    lon: String(longitude),
+    format: 'json',
+  });
 
-  return {
-    latitude,
-    longitude,
-    address:
-      data.display_name ||
-      `${latitude}, ${longitude}`,
-  };
+  const url =
+    `${LOCATIONIQ_BASE_URL}/reverse.php?${params.toString()}`;
+
+  try {
+    const response = await fetchWithTimeout(url);
+
+    if (!response.ok) {
+      return {
+        latitude,
+        longitude,
+        address: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+      };
+    }
+
+    const data = (await response.json()) as {
+      display_name?: string;
+    };
+
+    return {
+      latitude,
+      longitude,
+      address:
+        typeof data.display_name === 'string' &&
+        data.display_name.trim()
+          ? data.display_name.trim()
+          : `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+    };
+  } catch {
+    return {
+      latitude,
+      longitude,
+      address: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+    };
+  }
 }
 
 async function resolvePlusCode(
   input: string,
   plusCode: string,
 ): Promise<GeocodedLocation> {
-  // Full Plus Code: decode directly without needing a reference location.
   if (isFull(plusCode)) {
     const area = decode(plusCode);
 
@@ -164,10 +294,10 @@ async function resolvePlusCode(
     );
   }
 
-  // Short Plus Code: we need the accompanying place/address
-  // as a reference location.
   if (!isShort(plusCode)) {
-    throw new Error('The Plus Code is not valid.');
+    throw new Error(
+      'The Plus Code is not valid.',
+    );
   }
 
   const referenceText = getTextWithoutPlusCode(
@@ -205,7 +335,9 @@ export async function geocodeAddress(
   const trimmedAddress = address.trim();
 
   if (!trimmedAddress) {
-    throw new Error('Please enter a destination.');
+    throw new Error(
+      'Please enter a location.',
+    );
   }
 
   if (!LOCATIONIQ_API_KEY) {
@@ -214,8 +346,9 @@ export async function geocodeAddress(
     );
   }
 
-  // 1. Coordinates / Google Maps URLs containing coordinates.
-  const coordinates = extractCoordinates(trimmedAddress);
+  // 1. Coordinates / Google Maps URLs.
+  const coordinates =
+    extractCoordinates(trimmedAddress);
 
   if (coordinates) {
     return reverseGeocodeCoordinates(
@@ -225,7 +358,8 @@ export async function geocodeAddress(
   }
 
   // 2. Plus Code.
-  const plusCode = extractPlusCode(trimmedAddress);
+  const plusCode =
+    extractPlusCode(trimmedAddress);
 
   if (plusCode) {
     return resolvePlusCode(
@@ -234,6 +368,6 @@ export async function geocodeAddress(
     );
   }
 
-  // 3. Normal address/place name.
+  // 3. Normal address.
   return locationIqSearch(trimmedAddress);
 }

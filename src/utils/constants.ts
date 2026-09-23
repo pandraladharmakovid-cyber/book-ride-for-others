@@ -1,27 +1,21 @@
 export const COLORS = {
   background: '#0B0D10',
   surface: '#12161B',
-  surfaceAlt: '#15191E',
-  border: '#282E36',
-  borderSoft: '#242A32',
+  surfaceAlt: '#171C22',
 
-  text: '#FFFFFF',
-  textMuted: '#929AA5',
-  textDim: '#69727D',
+  border: '#252C34',
+  borderSoft: '#20262D',
 
-  accent: '#6EE7B7',
-  accentDark: '#07110D',
-  accentSurface: '#17251F',
-  accentBorder: '#315A4C',
+  text: '#F4F7FA',
+  textMuted: '#A0A9B4',
 
-  errorSurface: '#251719',
-  errorBorder: '#593034',
-  errorText: '#E5A9AE',
-} as const;
+  accent: '#C8FF3D',
+  accentDark: '#101400',
 
-export const TEST_LOCATION = {
-  latitude: 17.385044,
-  longitude: 78.486671,
-  address: 'Hyderabad, Telangana',
-  source: 'test',
+  accentSurface: '#1D2610',
+  accentBorder: '#435A18',
+
+  errorSurface: '#241416',
+  errorBorder: '#5A292E',
+  errorText: '#FFB4BA',
 } as const;

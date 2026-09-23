@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -17,34 +18,39 @@ import { router } from 'expo-router';
 
 import { resolveLocationInput } from '../services/locationParser';
 import type { LocationData } from '../types/location';
-import {
-  COLORS,
-  TEST_LOCATION,
-} from '../utils/constants';
+
+import { COLORS } from '../utils/constants';
 
 import { PrimaryButton } from '../components/PrimaryButton';
 import { PickupCard } from '../components/PickupCard';
 
 export default function LocationScreen() {
   const [input, setInput] = useState('');
+
   const [location, setLocation] =
     useState<LocationData | null>(null);
 
-  const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] =
+    useState(false);
+
+  const [errorMessage, setErrorMessage] =
+    useState('');
 
   const handleResolveLocation = async () => {
-    if (!input.trim() || loading) {
+    const value = input.trim();
+
+    if (!value || loading) {
       return;
     }
 
     setLoading(true);
     setErrorMessage('');
+    setLocation(null);
 
     try {
       const resolved =
         await resolveLocationInput(
-          input,
+          value,
           'manual',
         );
 
@@ -60,15 +66,6 @@ export default function LocationScreen() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleUseTestLocation = () => {
-    setErrorMessage('');
-
-    setLocation({
-      ...TEST_LOCATION,
-      source: 'test',
-    });
   };
 
   const handleContinue = () => {
@@ -90,39 +87,61 @@ export default function LocationScreen() {
     });
   };
 
+  const inputHasValue =
+    input.trim().length > 0;
+
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView
+      style={styles.safeArea}
+    >
       <StatusBar style="light" />
 
       <KeyboardAvoidingView
-        style={styles.keyboardContainer}
+        style={
+          styles.keyboardContainer
+        }
         behavior={
           Platform.OS === 'ios'
             ? 'padding'
             : undefined
         }
       >
-        <View style={styles.container}>
-          <View style={styles.topBar}>
+        <View
+          style={styles.container}
+        >
+          <View
+            style={styles.topBar}
+          >
             <Pressable
               onPress={() => router.back()}
               disabled={loading}
               style={({ pressed }) => [
                 styles.backButton,
-                pressed && styles.pressed,
+                pressed &&
+                  styles.pressed,
               ]}
             >
-              <Text style={styles.backArrow}>
+              <Text
+                style={
+                  styles.backArrow
+                }
+              >
                 ‹
               </Text>
             </Pressable>
 
-            <Text style={styles.screenTitle}>
+            <Text
+              style={
+                styles.screenTitle
+              }
+            >
               Pickup Location
             </Text>
 
             <View
-              style={styles.topBarSpacer}
+              style={
+                styles.topBarSpacer
+              }
             />
           </View>
 
@@ -131,7 +150,9 @@ export default function LocationScreen() {
               styles.scrollContent
             }
             keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
+            showsVerticalScrollIndicator={
+              false
+            }
           >
             <View
               style={
@@ -139,35 +160,42 @@ export default function LocationScreen() {
               }
             >
               <Text
-                style={styles.locationIcon}
+                style={
+                  styles.locationIcon
+                }
               >
                 📍
               </Text>
             </View>
 
-            <Text style={styles.title}>
+            <Text
+              style={styles.title}
+            >
               Where should the driver
               {'\n'}
               pick them up?
             </Text>
 
             <Text
-              style={styles.description}
+              style={
+                styles.description
+              }
             >
-              Enter an address, coordinates,
-              or Plus Code. Later, this same
-              screen will also accept a shared
-              WhatsApp location.
+              Enter the pickup address,
+              coordinates, Google Maps
+              location, or Plus Code.
             </Text>
 
-            <Text style={styles.label}>
+            <Text
+              style={styles.label}
+            >
               PICKUP LOCATION
             </Text>
 
             <View
               style={[
                 styles.inputContainer,
-                input.length > 0 &&
+                inputHasValue &&
                   styles.inputActive,
               ]}
             >
@@ -178,15 +206,16 @@ export default function LocationScreen() {
                   setErrorMessage('');
                   setLocation(null);
                 }}
-                placeholder="Address, coordinates, or Plus Code"
+                placeholder="Address, coordinates, Google Maps link, or Plus Code"
                 placeholderTextColor="#69727D"
                 style={styles.input}
                 multiline
                 numberOfLines={2}
                 textAlignVertical="center"
-                autoCapitalize="words"
-                autoCorrect
+                autoCapitalize="none"
+                autoCorrect={false}
                 editable={!loading}
+                returnKeyType="done"
                 onSubmitEditing={
                   handleResolveLocation
                 }
@@ -196,19 +225,21 @@ export default function LocationScreen() {
             <Text
               style={styles.helperText}
             >
-              Examples: Hyderabad, Telangana
-              {' · '}
-              17.385044, 78.486671
-              {' · '}
-              a Plus Code
+              Examples: Hyderabad,
+              Telangana · 17.385044,
+              78.486671 · 8P6P+V2H
             </Text>
 
             {errorMessage ? (
               <View
-                style={styles.errorCard}
+                style={
+                  styles.errorCard
+                }
               >
                 <View
-                  style={styles.errorIcon}
+                  style={
+                    styles.errorIcon
+                  }
                 >
                   <Text
                     style={
@@ -220,7 +251,9 @@ export default function LocationScreen() {
                 </View>
 
                 <Text
-                  style={styles.errorText}
+                  style={
+                    styles.errorText
+                  }
                 >
                   {errorMessage}
                 </Text>
@@ -229,18 +262,19 @@ export default function LocationScreen() {
 
             <Pressable
               disabled={
-                !input.trim() || loading
+                !inputHasValue ||
+                loading
               }
               onPress={
                 handleResolveLocation
               }
               style={({ pressed }) => [
                 styles.resolveButton,
-                (!input.trim() ||
+                (!inputHasValue ||
                   loading) &&
                   styles.resolveButtonDisabled,
                 pressed &&
-                  input.trim() &&
+                  inputHasValue &&
                   !loading &&
                   styles.pressed,
               ]}
@@ -266,7 +300,7 @@ export default function LocationScreen() {
                 <Text
                   style={[
                     styles.resolveText,
-                    !input.trim() &&
+                    !inputHasValue &&
                       styles.resolveTextDisabled,
                   ]}
                 >
@@ -282,16 +316,22 @@ export default function LocationScreen() {
               />
             ) : (
               <View
-                style={styles.emptyCard}
+                style={
+                  styles.emptyCard
+                }
               >
                 <Text
-                  style={styles.emptyIcon}
+                  style={
+                    styles.emptyIcon
+                  }
                 >
                   📍
                 </Text>
 
                 <Text
-                  style={styles.emptyTitle}
+                  style={
+                    styles.emptyTitle
+                  }
                 >
                   No pickup location yet
                 </Text>
@@ -301,35 +341,18 @@ export default function LocationScreen() {
                     styles.emptyDescription
                   }
                 >
-                  Resolve a location above, or
-                  use the test location while we
-                  build the WhatsApp sharing
-                  flow.
+                  Enter a location above
+                  and RideLink will resolve
+                  it before continuing.
                 </Text>
               </View>
             )}
-
-            <Pressable
-              onPress={
-                handleUseTestLocation
-              }
-              style={({ pressed }) => [
-                styles.testButton,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text
-                style={
-                  styles.testButtonText
-                }
-              >
-                Use Test Location
-              </Text>
-            </Pressable>
           </ScrollView>
 
           <View
-            style={styles.bottomSection}
+            style={
+              styles.bottomSection
+            }
           >
             <PrimaryButton
               label="Continue"
@@ -348,7 +371,8 @@ export default function LocationScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor:
+      COLORS.background,
   },
 
   keyboardContainer: {
@@ -366,14 +390,16 @@ const styles = StyleSheet.create({
     height: 48,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent:
+      'space-between',
   },
 
   backButton: {
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: COLORS.surfaceAlt,
+    backgroundColor:
+      COLORS.surfaceAlt,
     borderWidth: 1,
     borderColor: COLORS.border,
     alignItems: 'center',
@@ -447,15 +473,18 @@ const styles = StyleSheet.create({
     marginTop: 10,
     minHeight: 62,
     borderRadius: 16,
-    backgroundColor: COLORS.surface,
+    backgroundColor:
+      COLORS.surface,
     borderWidth: 1,
-    borderColor: COLORS.borderSoft,
+    borderColor:
+      COLORS.borderSoft,
     paddingHorizontal: 16,
     justifyContent: 'center',
   },
 
   inputActive: {
-    borderColor: COLORS.accentBorder,
+    borderColor:
+      COLORS.accentBorder,
   },
 
   input: {
@@ -477,7 +506,8 @@ const styles = StyleSheet.create({
     marginTop: 14,
     minHeight: 50,
     borderRadius: 14,
-    backgroundColor: COLORS.accent,
+    backgroundColor:
+      COLORS.accent,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -502,7 +532,8 @@ const styles = StyleSheet.create({
     marginTop: 18,
     padding: 22,
     borderRadius: 18,
-    backgroundColor: COLORS.surface,
+    backgroundColor:
+      COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
     alignItems: 'center',
@@ -527,30 +558,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  testButton: {
-    alignSelf: 'center',
-    marginTop: 14,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    backgroundColor: COLORS.surfaceAlt,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-
-  testButtonText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#AAB2BD',
-  },
-
   errorCard: {
     marginTop: 14,
     padding: 13,
     borderRadius: 14,
-    backgroundColor: COLORS.errorSurface,
+    backgroundColor:
+      COLORS.errorSurface,
     borderWidth: 1,
-    borderColor: COLORS.errorBorder,
+    borderColor:
+      COLORS.errorBorder,
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -584,6 +600,10 @@ const styles = StyleSheet.create({
 
   pressed: {
     opacity: 0.75,
-    transform: [{ scale: 0.99 }],
+    transform: [
+      {
+        scale: 0.99,
+      },
+    ],
   },
 });

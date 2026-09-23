@@ -1,7 +1,4 @@
-import React, {
-  useMemo,
-  useState,
-} from 'react';
+import React, { useMemo, useState } from 'react';
 
 import {
   ActivityIndicator,
@@ -41,20 +38,14 @@ export default function DestinationScreen() {
       address?: string;
     }>();
 
-  const [
-    destination,
-    setDestination,
-  ] = useState('');
+  const [destination, setDestination] =
+    useState('');
 
-  const [
-    loading,
-    setLoading,
-  ] = useState(false);
+  const [loading, setLoading] =
+    useState(false);
 
-  const [
-    errorMessage,
-    setErrorMessage,
-  ] = useState('');
+  const [errorMessage, setErrorMessage] =
+    useState('');
 
   const pickup =
     useMemo<LocationData | null>(() => {
@@ -68,7 +59,11 @@ export default function DestinationScreen() {
 
       if (
         !Number.isFinite(latitude) ||
-        !Number.isFinite(longitude)
+        !Number.isFinite(longitude) ||
+        latitude < -90 ||
+        latitude > 90 ||
+        longitude < -180 ||
+        longitude > 180
       ) {
         return null;
       }
@@ -107,12 +102,23 @@ export default function DestinationScreen() {
       setErrorMessage('');
 
       try {
+        /*
+         * Resolve the destination into
+         * latitude, longitude and address.
+         */
         const dropoff =
           await geocodeAddress(
-            destination,
+            destination.trim(),
           );
 
-        const opened =
+        /*
+         * Open Uber with both locations.
+         *
+         * This function first attempts
+         * the Uber app and then falls back
+         * to the Uber web experience.
+         */
+        const result =
           await openUberRideRequest({
             pickup: {
               latitude:
@@ -136,11 +142,21 @@ export default function DestinationScreen() {
             },
           });
 
-        if (!opened) {
+        if (result === 'none') {
           throw new Error(
-            'Uber could not be opened. Please make sure the Uber app is installed on this device.',
+            'Unable to open Uber. Please check your internet connection and make sure Uber is available on this device.',
           );
         }
+
+        /*
+         * At this point:
+         *
+         * 'app'  = Uber app accepted the request
+         * 'web'  = browser fallback opened
+         *
+         * RideLink does not book the ride itself.
+         * The user reviews and confirms it in Uber.
+         */
       } catch (error) {
         setErrorMessage(
           error instanceof Error
@@ -159,9 +175,7 @@ export default function DestinationScreen() {
       <StatusBar style="light" />
 
       <KeyboardAvoidingView
-        style={
-          styles.keyboardContainer
-        }
+        style={styles.keyboardContainer}
         behavior={
           Platform.OS === 'ios'
             ? 'padding'
@@ -179,9 +193,7 @@ export default function DestinationScreen() {
                 router.back()
               }
               disabled={loading}
-              style={({
-                pressed,
-              }) => [
+              style={({ pressed }) => [
                 styles.backButton,
                 pressed &&
                   styles.pressed,
@@ -240,6 +252,20 @@ export default function DestinationScreen() {
                   styles.errorCard
                 }
               >
+                <View
+                  style={
+                    styles.errorIcon
+                  }
+                >
+                  <Text
+                    style={
+                      styles.errorIconText
+                    }
+                  >
+                    !
+                  </Text>
+                </View>
+
                 <Text
                   style={
                     styles.errorText
@@ -336,9 +362,7 @@ export default function DestinationScreen() {
               onPress={
                 handleContinue
               }
-              style={({
-                pressed,
-              }) => [
+              style={({ pressed }) => [
                 styles.continueButton,
                 !canContinue &&
                   styles.continueButtonDisabled,
@@ -434,15 +458,14 @@ const styles = StyleSheet.create({
   },
 
   backArrow: {
-    marginTop: -3,
+    marginTop: -4,
     fontSize: 32,
     lineHeight: 36,
     color: COLORS.text,
-    fontWeight: '300',
   },
 
   screenTitle: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
     color: COLORS.text,
   },
@@ -465,6 +488,33 @@ const styles = StyleSheet.create({
 
   destinationLabel: {
     marginTop: 28,
+    marginBottom: 10,
+  },
+
+  infoCard: {
+    marginTop: 18,
+    padding: 15,
+    borderRadius: 16,
+    backgroundColor:
+      COLORS.surfaceAlt,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+
+  infoIcon: {
+    fontSize: 17,
+    lineHeight: 20,
+    color: COLORS.accent,
+    marginRight: 10,
+  },
+
+  infoText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#89939F',
   },
 
   errorCard: {
@@ -474,8 +524,7 @@ const styles = StyleSheet.create({
     backgroundColor:
       COLORS.errorSurface,
     borderWidth: 1,
-    borderColor:
-      COLORS.errorBorder,
+    borderColor: COLORS.errorBorder,
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -503,50 +552,19 @@ const styles = StyleSheet.create({
     color: COLORS.errorText,
   },
 
-  infoCard: {
-    marginTop: 18,
-    padding: 15,
-    borderRadius: 15,
-    backgroundColor: '#11151A',
-    borderWidth: 1,
-    borderColor: '#20262D',
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-
-  infoIcon: {
-    width: 23,
-    height: 23,
-    borderRadius: 12,
-    backgroundColor: '#202832',
-    textAlign: 'center',
-    lineHeight: 23,
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#8D98A4',
-    marginRight: 10,
-  },
-
-  infoText: {
-    flex: 1,
-    fontSize: 12,
-    lineHeight: 18,
-    color: '#737D88',
-  },
-
   bottomSection: {
     paddingTop: 12,
   },
 
   continueButton: {
-    height: 58,
+    minHeight: 58,
     borderRadius: 16,
     backgroundColor:
       COLORS.accent,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 18,
   },
 
   continueButtonDisabled: {
@@ -554,7 +572,7 @@ const styles = StyleSheet.create({
   },
 
   continueText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
     color: COLORS.accentDark,
   },
@@ -565,22 +583,24 @@ const styles = StyleSheet.create({
 
   continueArrow: {
     marginLeft: 10,
-    fontSize: 22,
+    fontSize: 21,
     fontWeight: '700',
     color: COLORS.accentDark,
   },
 
   loadingText: {
     marginLeft: 10,
-    fontSize: 15,
-    fontWeight: '800',
+    fontSize: 14,
+    fontWeight: '700',
     color: COLORS.accentDark,
   },
 
   pressed: {
     opacity: 0.75,
     transform: [
-      { scale: 0.99 },
+      {
+        scale: 0.99,
+      },
     ],
   },
 });
