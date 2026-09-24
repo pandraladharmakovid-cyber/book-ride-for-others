@@ -1,112 +1,179 @@
-🚗 RideLink
+# 🚗 RideLink
 
-Book a ride for someone else — from their shared location.
+### Book a ride for someone else — directly from their shared location.
 
-RideLink is a React Native mobile application designed to simplify booking a ride for another person.
+RideLink is a mobile app designed to make booking an Uber ride for another person much easier.
 
-The idea is simple:
+Imagine a friend, family member, or someone who needs a ride sends you their **current location on WhatsApp**.
 
-Someone shares their location → RideLink receives the pickup location → you enter the destination → RideLink opens Uber with the trip details.
+Instead of manually copying coordinates, searching for the location, and entering everything again, RideLink is designed to simplify the process:
 
-✨ How RideLink Works
+**Shared Location → RideLink Pickup → Destination → Uber**
 
-📍 Someone shares their location
-              ↓
-        🔗 RideLink link
-              ↓
-      📌 Pickup location
-              ↓
-       🎯 Enter destination
-              ↓
-       🌍 Resolve destination
-              ↓
-          🚗 Uber
-              ↓
-       ✅ Review & confirm
+---
 
-The goal is to remove the need to manually copy and re-enter a person's location when arranging a ride for them.
+## 📱 Download RideLink
 
-🚀 Current Features
+### Android APK
 
-📍 Pickup location handling
+**[⬇️ Download RideLink APK](https://expo.dev/artifacts/eas/3lFNC6aCiJJLq8BRaG173kRGKUr7FXSvuuMdWDrTHXI.apk)**
 
-🔎 Address geocoding
+The APK is an Android preview build created with Expo EAS.
 
-🎯 Destination search
+### Installation
 
-🌍 Latitude and longitude support
+1. Open the APK link on an Android device.
+2. Download the APK.
+3. If Android asks for permission to install from the browser, allow it.
+4. Install RideLink.
+5. Open the app and test the ride-booking flow.
 
-🧪 Test location for development
+---
 
-🚗 Uber ride-request integration
+## 💡 The Problem
 
-📱 Android development support
+Booking a ride for someone else can be surprisingly inconvenient.
 
-⚡ Expo + React Native
+For example:
 
-🧩 Modular TypeScript architecture
+> Your friend is somewhere unfamiliar and sends you their current WhatsApp location.
 
-🔐 Environment-variable based API configuration
+Normally, you may have to:
 
-🛠️ Tech Stack
+1. Open the shared location.
+2. Find or copy the location.
+3. Open a ride-booking app.
+4. Enter the pickup location manually.
+5. Enter the destination.
+6. Continue with the ride booking.
 
-Technology
+That's a lot of unnecessary steps.
 
-Purpose
+---
 
-React Native
+## ⚡ The RideLink Idea
 
-Mobile application
+RideLink focuses on making that process simpler.
 
-Expo
+### Traditional Flow
 
-Development and build platform
+```text
+Friend
+  ↓
+WhatsApp Location
+  ↓
+Open Maps
+  ↓
+Find / Copy Location
+  ↓
+Open Uber
+  ↓
+Enter Pickup
+  ↓
+Enter Destination
+  ↓
+Book Ride
+```
 
-Expo Router
+### RideLink Flow
 
-Application navigation
+```text
+Friend
+  ↓
+WhatsApp Location
+  ↓
+RideLink
+  ↓
+Pickup Location
+  ↓
+Enter Destination
+  ↓
+Uber
+```
 
-TypeScript
+The goal is simple:
 
-Type-safe development
+> **Turn a shared location into a ride-booking starting point with as little manual work as possible.**
 
-Android Studio
+---
 
-Android emulator and testing
+## ✨ Key Features
 
-Node.js
+### 📍 Location-Based Pickup
 
-Development environment
+RideLink is designed around the location shared by the person who needs the ride.
 
-LocationIQ
+### 🎯 Simple Destination Entry
 
-Address and coordinate geocoding
+The destination can be entered manually after the pickup location is available.
 
-Uber Deep Links
+### 🚗 Uber Handoff
 
-Ride handoff
+After the pickup and destination are prepared, RideLink can hand the ride information off toward Uber.
 
-📂 Project Structure
+### 📱 Mobile-First Experience
 
-ridelink/
+RideLink is built as a mobile application using React Native and Expo.
+
+### ⚡ Designed for Speed
+
+The idea is to remove unnecessary steps when arranging a ride for another person.
+
+---
+
+## 🧑‍💻 Example Use Case
+
+Suppose your friend is waiting at a location and sends you their current location through WhatsApp.
+
+Instead of asking:
+
+> "What is the exact address?"
+
+You can use the shared location as the starting point and arrange the ride from there.
+
+This can be useful when:
+
+- A friend needs a ride
+- A family member needs transportation
+- Someone is unfamiliar with their exact address
+- You are booking a ride remotely for another person
+- You want to avoid manually re-entering location information
+
+---
+
+## 🛠️ Tech Stack
+
+- **React Native**
+- **Expo**
+- **Expo Router**
+- **TypeScript**
+- **LocationIQ**
+- **Uber deep linking**
+- **Android / Expo EAS**
+
+---
+
+## 🏗️ Project Structure
+
+```text
+RideLink/
 │
 ├── assets/
+│   └── splash.png
 │
 ├── src/
 │   ├── app/
-│   │   ├── _layout.tsx
-│   │   ├── index.tsx
 │   │   ├── location.tsx
 │   │   └── destination.tsx
 │   │
 │   ├── components/
-│   │   ├── DestinationSearch.tsx
 │   │   ├── PickupCard.tsx
+│   │   ├── DestinationSearch.tsx
 │   │   └── PrimaryButton.tsx
 │   │
 │   ├── services/
-│   │   ├── geocoding.ts
 │   │   ├── locationParser.ts
+│   │   ├── geocoding.ts
 │   │   └── uber.ts
 │   │
 │   ├── types/
@@ -116,248 +183,117 @@ ridelink/
 │   └── utils/
 │       └── constants.ts
 │
-├── .env
-├── .gitignore
 ├── app.json
 ├── package.json
-├── package-lock.json
-├── tsconfig.json
 └── README.md
+```
 
-📍 Shared Location
+---
 
-The planned production flow supports a RideLink URL containing pickup coordinates:
-
-https://ridelink.app/pickup?lat=17.385044&lng=78.486671
-
-RideLink can then:
-
-Read the latitude and longitude.
-
-Resolve the coordinates into a readable address.
-
-Display the pickup location.
-
-Ask for the destination.
-
-Resolve the destination coordinates.
-
-Open the Uber ride flow.
-
-The current manual pickup input is a development/testing fallback. The intended final experience is based on receiving the pickup location through a shared RideLink link.
-
-🚗 Uber Integration
-
-RideLink is designed around Uber's official ride-request deep-link mechanism.
-
-RideLink
-   │
-   ├── Pickup coordinates
-   │
-   └── Destination coordinates
-             │
-             ↓
-       Uber Deep Link
-             │
-       ┌─────┴─────┐
-       ↓           ↓
-   Uber App    Uber Web
-
-Uber remains responsible for the final ride experience, including reviewing the trip and confirming the ride.
-
-🧪 Development Status
-
-Completed
-
-Expo React Native project setup
-
-TypeScript configuration
-
-Pickup location screen
-
-Manual pickup testing
-
-Test pickup location
-
-Pickup coordinates
-
-Address geocoding
-
-Destination screen
-
-Destination geocoding
-
-Pickup → destination flow
-
-Android emulator setup
-
-TypeScript validation
-
-In Progress
-
-Shared-location link handling
-
-Automatic pickup extraction from shared coordinates
-
-Production-ready Uber deep-link flow
-
-Compatible Android emulator testing
-
-Real-device testing
-
-Final UI/UX improvements
-
-Production release preparation
-
-🗺️ Roadmap
-
-Phase 1 — Foundation
-
-React Native setup
-
-Location handling
-
-Geocoding
-
-Destination handling
-
-Phase 2 — Smart Location Sharing
-
-RideLink shared-location URLs
-
-Coordinate extraction
-
-Automatic pickup detection
-
-Pickup validation
-
-Phase 3 — Ride Integration
-
-Uber deep-link integration
-
-Native Uber testing
-
-Uber web fallback
-
-Complete ride handoff testing
-
-Phase 4 — Production
-
-UI/UX refinement
-
-Robust error handling
-
-Android real-device testing
-
-Performance testing
-
-Production release
-
-🔑 Environment Variables
-
-API keys and secrets must never be hardcoded into source code.
-
-Create a local .env file:
-
-EXPO_PUBLIC_LOCATIONIQ_API_KEY=your_api_key_here
-
-Never commit the real .env file to GitHub.
-
-Make sure .env is included in .gitignore.
-
-💻 Run RideLink Locally
+## 🚀 Running the Project Locally
 
 Clone the repository:
 
-git clone <your-repository-url>
+```bash
+git clone https://github.com/pandraladharmakovid-cyber/book-ride-for-others.git
+```
 
 Enter the project:
 
-cd ridelink
+```bash
+cd book-ride-for-others
+```
 
 Install dependencies:
 
+```bash
 npm install
+```
 
 Start Expo:
 
+```bash
 npx expo start
+```
 
-Start directly on Android:
+---
 
-npx expo start --android
+## 🔐 Environment Variables
 
-🧪 TypeScript Validation
+RideLink uses environment variables for API configuration.
 
-Before committing changes, run:
+Create a `.env` file:
 
-npx tsc --noEmit
+```env
+EXPO_PUBLIC_LOCATIONIQ_API_KEY=your_locationiq_api_key
+```
 
-The command should complete without TypeScript errors.
+Do not commit `.env` or expose API keys publicly.
 
-🤝 Contributing
+---
 
-Contributions are welcome.
+## 🎯 Why RideLink?
 
-Basic workflow
+RideLink is built around a simple idea:
 
-Fork the repository.
+**The person who needs the ride already has a location.**
 
-Create a feature branch.
+Instead of making the person booking the ride manually reproduce that location, RideLink attempts to make the shared location the starting point of the booking process.
 
-git checkout -b feature/your-feature
+That makes the experience:
 
-Make your changes.
+- **Simpler**
+- **Faster**
+- **More convenient**
+- **Less repetitive**
 
-Test the application.
+---
 
-Run the TypeScript check.
+## 📲 Current Platform
 
-npx tsc --noEmit
+| Platform | Status |
+|---|---|
+| Android | ✅ APK available |
+| iOS | Not currently released |
+| Web | Not the target platform |
 
-Commit your changes.
+---
 
-git add .
-git commit -m "Add your feature"
+## 📦 Android Build
 
-Push your branch.
+Current Android build:
 
-git push origin feature/your-feature
+```text
+Version: 1.0.0
+Version Code: 1
+Build Status: Finished
+Distribution: Internal / Preview
+```
 
-Open a Pull Request.
+**[⬇️ Download the latest Android APK](https://expo.dev/artifacts/eas/3lFNC6aCiJJLq8BRaG173kRGKUr7FXSvuuMdWDrTHXI.apk)**
 
-📌 Development Principles
+---
 
-Keep API keys and secrets out of source code.
+## 👨‍💻 Developer
 
-Never commit .env.
+**Pandrala Dharma Kovidh**
 
-Use TypeScript for application code.
+BTech Student | AI & Software Developer
 
-Test changes before committing.
+### Connect
 
-Keep components focused and reusable.
+- GitHub: https://github.com/pandraladharmakovid-cyber
+- LinkedIn: https://www.linkedin.com/in/pandrala-dharma-kovidh-0b1b36357/
+- Instagram: https://www.instagram.com/pandraladharmakovidh/
 
-Prefer official APIs and documented integrations.
+---
 
-Keep the user in control of the final ride confirmation.
+## ⭐ Support the Project
 
-Avoid storing unnecessary location information.
+If you find the idea useful, consider giving the repository a ⭐ on GitHub.
 
-⚠️ Project Status
+---
 
-RideLink is currently under active development.
+## 📄 License
 
-Some features are still being tested and may change before the first production release.
-
-📄 License
-
-License information will be added as the project progresses.
-
-🌟 Project Vision
-
-RideLink aims to make arranging rides for other people as simple as sharing a location.
-
-Share the location.
-Choose the destination.
-Ride.
+This project is provided for educational and development purposes.
